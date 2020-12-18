@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<html>
+
+<head>
+
+<!-- vertex shader -->
+<script  id="vertex-shader-3d" type="x-shader/x-vertex">
+attribute vec4 a_position;
+attribute vec2 a_texcoord;
+
+uniform mat4 u_projection;
+uniform mat4 u_view;
+uniform mat4 u_world;
+uniform mat4 u_textureMatrix;
+
+varying vec2 v_texcoord;
+varying vec4 v_projectedTexcoord;
+
+void main() {
+  // Multiply the position by the matrix.
+  vec4 worldPosition = u_world * a_position;
+
+  gl_Position = u_projection * u_view * worldPosition;
+
+  // Pass the texture coord to the fragment shader.
+  v_texcoord = a_texcoord;
+
+  v_projectedTexcoord = u_textureMatrix * worldPosition;
+}
+</script>
+<!-- fragment shader -->
+<script  id="fragment-shader-3d" type="x-shader/x-fragment">
+precision mediump float;
+
+// Passed in from the vertex shader.
+varying vec2 v_texcoord;
+varying vec4 v_projectedTexcoord;
+
+uniform vec4 u_colorMult;
+uniform sampler2D u_texture;
+uniform sampler2D u_projectedTexture;
+
+void main() {
+  vec3 projectedTexcoord = v_projectedTexcoord.xyz / v_projectedTexcoord.w;
+  bool inRange = 
+      projectedTexcoord.x >= 0.0 &&
+      projectedTexcoord.x <= 1.0 &&
+      projectedTexcoord.y >= 0.0 &&
+      projectedTexcoord.y <= 1.0;
+  vec4 projectedTexColor = texture2D(u_projectedTexture, projectedTexcoord.xy);
+  vec4 texColor = texture2D(u_texture, v_texcoord) * u_colorMult;
+  float projectedAmount = inRange ? 1.0 : 0.0;
+  gl_FragColor = mix(texColor, projectedTexColor, projectedAmount);
+}
+</script>
+<!-- vertex shader -->
+<script  id="color-vertex-shader" type="x-shader/x-vertex">
+attribute vec4 a_position;
+
+uniform mat4 u_projection;
+uniform mat4 u_view;
+uniform mat4 u_world;
+
+void main() {
+  // Multiply the position by the matrices.
+  gl_Position = u_projection * u_view * u_world * a_position;
+}
+</script>
+<!-- fragment shader -->
+<script  id="color-fragment-shader" type="x-shader/x-fragment">
+precision mediump float;
+
+uniform vec4 u_color;
+void main() {
+  gl_FragColor = u_color;
+}
+</script>
+
+
+<script src="webgl_ui.js"></script>
+<script src="webgl_utils.js"></script>
+<script src="m4.js"></script>
+<script src="primitives.js"></script>
+
+</head>
+<body onload="init()">
+
+<canvas id="canvas"></canvas>
+
+<div id="uiContainer">
+    <div id="ui">
+    </div>
+</div>
+
+</body>
+
+
+</html>
